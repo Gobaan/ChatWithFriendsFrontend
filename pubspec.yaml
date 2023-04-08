@@ -30,7 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  http: ^0.13.3
+  http: ^0.13.5
   web_socket_channel: ^2.1.0
 
   # The following adds the Cupertino Icons font to your application.
@@ -40,7 +40,16 @@ dependencies:
   shared_preferences: ^2.0.9
   qr_flutter: ^4.0.0
   uni_links: ^0.5.1
-  
+  flutter_sound: ^9.2.0
+  path_provider: ^2.0.14
+  permission_handler: ^10.2.0
+  audio_session: ^0.1.13
+  flutter_ffmpeg: ^0.4.2
+  audioplayers: ^3.0.1
+  ffmpeg_kit_flutter: ^5.1.0
+  webm_to_wav: ^0.0.1
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -10,6 +10,7 @@ class Conversation {
   final List<Message> messages;
   final String userLanguage;
   final String defaultLanguage;
+  String blobUrl;
 
   Conversation(
       {required this.title,
@@ -18,7 +19,8 @@ class Conversation {
       required this.checksum,
       required this.messages,
       required this.userLanguage,
-      required this.defaultLanguage});
+      required this.defaultLanguage,
+      required this.blobUrl});
 }
 
 class ConversationsList extends StatelessWidget {

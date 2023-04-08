@@ -43,10 +43,11 @@ class _MessengerAppState extends State<MessengerApp> {
                   sessionId: sessionId,
                   userId: '2',
                   checksum: checksum,
-                  messages: messages,
+                  messages: [],
                   title: 'Placeholder',
                   userLanguage: language ?? 'en',
-                  defaultLanguage: language ?? 'en')),
+                  defaultLanguage: language ?? 'en',
+                  blobUrl: '')),
         );
       } else {
         return MaterialPageRoute(builder: (context) => HomeScreen());

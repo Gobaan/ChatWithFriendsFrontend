@@ -58,7 +58,8 @@ class _LanguageScreenState extends State<LanguageScreen> {
         checksum: 'Placeholder',
         messages: [],
         userLanguage: _getUserLanguage(),
-        defaultLanguage: AppConfig.languageCode[language] ?? 'en');
+        defaultLanguage: AppConfig.languageCode[language] ?? 'en',
+        blobUrl: '');
     // Perform any action after selecting the language
     Navigator.push(
       context,

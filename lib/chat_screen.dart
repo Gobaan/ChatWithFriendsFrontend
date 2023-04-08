@@ -1,31 +1,32 @@
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import "package:chat_with_friends/helpers.dart";
+import 'dart:async';
+import 'dart:convert';
+import 'dart:html' as html;
+import 'package:chat_with_friends/config.dart';
 import 'package:chat_with_friends/conversation.dart';
 import 'package:chat_with_friends/message.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/html.dart';
 import 'package:flutter/foundation.dart';
-import "package:chat_with_friends/helpers.dart";
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:chat_with_friends/config.dart';
-import 'dart:html' as html;
+import 'package:web_socket_channel/html.dart';
+import 'package:web_socket_channel/io.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:chat_with_friends/simple_recorder.dart';
 
 Future<String> fetchWebSocketUrl(Conversation conversation) async {
   var negotiateUrl =
       '${AppConfig.negotiateUrl}?sessionId=${conversation.sessionId}&userId=${conversation.userId}&language=${conversation.userLanguage}';
-  // root = http://localhost:7071/api/
   final response = await http.get(Uri.parse(negotiateUrl));
 
   if (response.statusCode == 200) {
     // Parse the response body for the WebSocket URL
     final jsonResponse = jsonDecode(response.body);
     final sessionId = jsonResponse['sessionId'];
-    final userId = jsonResponse['userId'];
     storeInfo('sessionId', sessionId);
-    storeInfo(sessionId + ':userId', userId);
+    storeInfo(sessionId + ':info', response.body);
+    conversation.blobUrl = jsonResponse['blobUrl'];
     return jsonResponse['url'];
   } else {
     throw Exception('Failed to fetch WebSocket URL');
@@ -159,40 +160,51 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildInputArea() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.0),
-      height: 70.0,
+      margin: EdgeInsets.symmetric(horizontal: 8.0),
       child: Row(
         children: [
-          Expanded(
+          Flexible(
             child: TextField(
               controller: _textController,
-              decoration: InputDecoration(
-                hintText: 'Type a message',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30.0),
-                  borderSide: BorderSide.none,
-                ),
-              ),
+              onChanged: (text) => setState(() {}),
+              decoration: InputDecoration.collapsed(hintText: 'Send a message'),
             ),
           ),
-          IconButton(
-            icon: Icon(Icons.send),
-            onPressed: () {
-              final text = _textController.text.trim();
-              if (text.isNotEmpty) {
-                _sendMessage(text);
-                _textController.clear();
-              }
-            },
+          SimpleRecorder(
+            textController: _textController,
+            onText: _sendMessage,
+            onRecord: onRecord,
+            conversation: widget.conversation,
           ),
         ],
       ),
     );
   }
 
+  void onRecord(Uri uri) {
+    final message = Message(
+      sender: widget
+          .conversation.userId, // Replace with the current user's identifier
+      original: '',
+      translated: '',
+      timestamp: DateTime.now(),
+    );
+
+    var jsonMessage = message.toJson();
+    jsonMessage['sessionId'] = widget.conversation.sessionId;
+    jsonMessage['language'] = widget.conversation.userLanguage;
+    jsonMessage['uri'] = uri.toString();
+    // Send the message via WebSocket
+    _webSocketChannel?.sink.add(json.encode(jsonMessage));
+
+    // Add the sent message to the list of messages and update the UI
+    setState(() {
+      widget.conversation.messages.add(message);
+    });
+  }
+
   void _sendMessage(String text) {
+    _textController.clear();
     final message = Message(
       sender: widget
           .conversation.userId, // Replace with the current user's identifier
@@ -213,26 +225,3 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 }
-
-final List<Message> messages = [
-  Message(
-      sender: 'John',
-      original: 'Hey there!',
-      translated: '',
-      timestamp: DateTime.now().subtract(Duration(minutes: 15))),
-  Message(
-      sender: 'Me',
-      original: 'Hi, John!',
-      translated: '',
-      timestamp: DateTime.now().subtract(Duration(minutes: 10))),
-  Message(
-      sender: 'John',
-      original: 'How are you?',
-      translated: '',
-      timestamp: DateTime.now().subtract(Duration(minutes: 8))),
-  Message(
-      sender: 'Me',
-      original: 'I\'m good, thanks! How about you?',
-      translated: '',
-      timestamp: DateTime.now().subtract(Duration(minutes: 5))),
-];
