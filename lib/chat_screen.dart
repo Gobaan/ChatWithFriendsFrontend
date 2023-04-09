@@ -95,8 +95,7 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         body: Column(
           children: [
-            SelectableText(
-                'visit ${qrCodeUrl} or Scan this QR code to join the chat:'),
+            SelectableText('${qrCodeUrl}'),
             const SizedBox(height: 20),
             QrImage(data: qrCodeUrl, size: 200),
             Expanded(
