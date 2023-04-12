@@ -17,6 +17,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.13"
+  audioplayers_platform_interface:
+    dependency: transitive
+    description:
+      name: audioplayers_platform_interface
+      sha256: "3a90a46198d375fc7d47bc1d3070c8fd8863b6469b7d87ca80f953efb090f976"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.0"
+  audioplayers_web:
+    dependency: "direct main"
+    description:
+      name: audioplayers_web
+      sha256: "2f1709b8b9aec97228d26348757733c8acc465ce860e164a6bf12068ec9e0410"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
   boolean_selector:
     dependency: transitive
     description:

@@ -19,15 +19,12 @@
 
 import 'dart:async';
 import 'dart:typed_data';
-import 'package:audio_session/audio_session.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter_sound/flutter_sound.dart';
 import 'package:flutter_sound_platform_interface/flutter_sound_recorder_platform_interface.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'dart:html' as html;
 import 'package:http/http.dart' as http;
 import 'package:chat_with_friends/conversation.dart';
+import 'package:chat_with_friends/web_recorder.dart';
 
 /*
  * This is an example showing how to record to a Dart Stream.
@@ -73,107 +70,36 @@ class SimpleRecorder extends StatefulWidget {
 }
 
 class _SimpleRecorderState extends State<SimpleRecorder> {
-  Codec _codec = Codec.opusOGG;
-  String _mPath = 'tau_file.ogg';
-  FlutterSoundPlayer? _mPlayer = FlutterSoundPlayer();
-  FlutterSoundRecorder? _mRecorder = FlutterSoundRecorder();
-  bool _mPlayerIsInited = false;
-  bool _mRecorderIsInited = false;
-  bool _mplaybackReady = false;
+  OpusOggRecorder recorder = OpusOggRecorder();
 
   // Create a new MediaRecorder for the audio data
 
   @override
   void initState() {
-    _mPlayer!.openPlayer().then((value) {
-      setState(() {
-        _mPlayerIsInited = true;
-      });
-    });
-
-    openTheRecorder().then((value) {
-      setState(() {
-        _mRecorderIsInited = true;
-      });
-    });
     super.initState();
+    recorder.requestPermissions();
   }
 
   @override
   void dispose() {
-    _mPlayer!.closePlayer();
-    _mPlayer = null;
+    recorder.stopRecording();
 
-    _mRecorder!.closeRecorder();
-    _mRecorder = null;
     super.dispose();
-  }
-
-  Future<void> openTheRecorder() async {
-    if (!kIsWeb) {
-      var status = await Permission.microphone.request();
-      if (status != PermissionStatus.granted) {
-        throw RecordingPermissionException('Microphone permission not granted');
-      }
-    }
-    // Add the libopus codec for Opus audio
-    await _mRecorder!.openRecorder();
-    if (!await _mRecorder!.isEncoderSupported(_codec) && kIsWeb) {
-      _codec = Codec.opusWebM;
-      _mPath = 'tau_file.webm';
-      if (!await _mRecorder!.isEncoderSupported(_codec) && kIsWeb) {
-        _mRecorderIsInited = true;
-        return;
-      }
-    }
-    final session = await AudioSession.instance;
-    await session.configure(AudioSessionConfiguration(
-      avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
-      avAudioSessionCategoryOptions:
-          AVAudioSessionCategoryOptions.allowBluetooth |
-              AVAudioSessionCategoryOptions.defaultToSpeaker,
-      avAudioSessionMode: AVAudioSessionMode.spokenAudio,
-      avAudioSessionRouteSharingPolicy:
-          AVAudioSessionRouteSharingPolicy.defaultPolicy,
-      avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
-      androidAudioAttributes: const AndroidAudioAttributes(
-        contentType: AndroidAudioContentType.speech,
-        flags: AndroidAudioFlags.none,
-        usage: AndroidAudioUsage.voiceCommunication,
-      ),
-      androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-      androidWillPauseWhenDucked: true,
-    ));
-
-    _mRecorderIsInited = true;
   }
 
   // ----------------------  Here is the code for recording and playback -------
 
   void record() {
-    _mRecorder!
-        .startRecorder(
-      toFile: _mPath,
-      codec: _codec,
-      audioSource: theSource,
-    )
-        .then((value) {
-      setState(() {});
-    });
+    recorder.startRecording(_uploadAudio);
+    setState(() {});
   }
 
   void stopRecorder() async {
-    await _mRecorder!.stopRecorder().then((value) {
-      setState(() {
-        //var url = value;
-        _mplaybackReady = true;
-        _uploadAudio();
-      });
-    });
+    recorder.stopRecording();
+    setState(() {});
   }
 
-  Future<void> _uploadAudio() async {
-    String recordUrl = await _mRecorder!.getRecordURL(path: _mPath) ?? '';
+  Future<void> _uploadAudio(String recordUrl) async {
     html.HttpRequest request =
         await html.HttpRequest.request(recordUrl, responseType: "arraybuffer");
     ByteBuffer buffer = request.response as ByteBuffer;
@@ -185,7 +111,6 @@ class _SimpleRecorderState extends State<SimpleRecorder> {
       ..headers['x-ms-blob-type'] = 'BlockBlob'
       ..headers['Content-Type'] = 'audio/webm'
       ..bodyBytes = audioBytes;
-    print(_mPath);
     http.StreamedResponse response = await request2.send();
 
     if (response.statusCode == 201) {
@@ -196,43 +121,10 @@ class _SimpleRecorderState extends State<SimpleRecorder> {
     }
   }
 
-  void play() {
-    assert(_mPlayerIsInited &&
-        _mplaybackReady &&
-        _mRecorder!.isStopped &&
-        _mPlayer!.isStopped);
-    _mPlayer!
-        .startPlayer(
-            fromURI: _mPath,
-            //codec: kIsWeb ? Codec.opusWebM : Codec.aacADTS,
-            whenFinished: () {
-              setState(() {});
-            })
-        .then((value) {
-      setState(() {});
-    });
-  }
-
-  void stopPlayer() {
-    _mPlayer!.stopPlayer().then((value) {
-      setState(() {});
-    });
-  }
-
 // ----------------------------- UI --------------------------------------------
 
   _Fn? getRecorderFn() {
-    if (!_mRecorderIsInited || !_mPlayer!.isStopped) {
-      return null;
-    }
-    return _mRecorder!.isStopped ? record : stopRecorder;
-  }
-
-  _Fn? getPlaybackFn() {
-    if (!_mPlayerIsInited || !_mplaybackReady || !_mRecorder!.isStopped) {
-      return null;
-    }
-    return _mPlayer!.isStopped ? play : stopPlayer;
+    return recorder.isStopped ? record : stopRecorder;
   }
 
   void _sendMessage(String message) {
@@ -242,11 +134,11 @@ class _SimpleRecorderState extends State<SimpleRecorder> {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: _mRecorder!.isRecording
-          ? const Icon(Icons.stop, color: Colors.red)
-          : (widget.textController.text.isEmpty
+      icon: recorder.isStopped
+          ? (widget.textController.text.isEmpty
               ? const Icon(Icons.mic)
-              : const Icon(Icons.send)),
+              : const Icon(Icons.send))
+          : const Icon(Icons.stop, color: Colors.red),
       onPressed: widget.textController.text.isEmpty
           ? getRecorderFn()
           : () => _sendMessage(widget.textController.text),

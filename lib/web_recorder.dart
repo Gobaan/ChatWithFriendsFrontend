@@ -1,8 +1,5 @@
 import 'dart:html' as html;
-import 'dart:typed_data';
 import 'dart:js' as js;
-import 'package:js/js.dart';
-import 'package:js/js_util.dart';
 
 typedef RecordingCallback = void Function(String blobUrl);
 
@@ -11,12 +8,8 @@ class OpusOggRecorder {
   html.MediaStream? _mediaStream;
   bool isStopped = true;
   bool isBlocked = false;
-  void startRecording(RecordingCallback callback) async {
-    html.Blob blob = html.Blob([]);
-    if (isBlocked) {
-      return;
-    }
-    isBlocked = true;
+
+  Future<html.MediaStream> getStream() async {
     _mediaStream = await html.window.navigator.mediaDevices?.getUserMedia({
       'audio': {
         'echoCancellation': true,
@@ -24,6 +17,25 @@ class OpusOggRecorder {
         'autoGainControl': true,
       }
     });
+    return _mediaStream!;
+  }
+
+  void requestPermissions() async {
+    var stream = await getStream();
+    stream.getTracks().forEach((track) {
+      if (track.readyState == 'live') {
+        track.stop();
+      }
+    });
+  }
+
+  void startRecording(RecordingCallback callback) async {
+    _mediaStream = await getStream();
+    html.Blob blob = html.Blob([]);
+    if (isBlocked) {
+      return;
+    }
+    isBlocked = true;
 
     _mediaRecorder = html.MediaRecorder(_mediaStream!, {
       'mimeType': 'audio/webm; codecs=opus',
