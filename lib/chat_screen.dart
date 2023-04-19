@@ -14,7 +14,12 @@ import 'package:web_socket_channel/html.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:chat_with_friends/simple_recorder.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'dart:js' as js;
+
+void speak(String text, String language) {
+  print(js.context.callMethod('getSupportedLanguages', []));
+  js.context.callMethod('speak', [text, language]);
+}
 
 Future<String> fetchWebSocketUrl(Conversation conversation) async {
   var negotiateUrl =
@@ -45,7 +50,6 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   WebSocketChannel? _webSocketChannel;
-  final FlutterTts flutterTts = FlutterTts();
 
   @override
   void initState() {
@@ -59,14 +63,8 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  Future<void> playTextAsSpeech(String text) async {
-    print(await flutterTts.getLanguages);
-    await flutterTts.setLanguage(widget.conversation
-        .getLanguage()); // You can change this to other languages as needed
-    await flutterTts.setPitch(1.0);
-    await flutterTts.setSpeechRate(0.5);
-
-    await flutterTts.speak(text);
+  void playTextAsSpeech(String text) {
+    speak(text, widget.conversation.getLanguage());
   }
 
   Future<void> _initializeWebSocket() async {
