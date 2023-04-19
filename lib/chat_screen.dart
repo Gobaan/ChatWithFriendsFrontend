@@ -60,8 +60,9 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> playTextAsSpeech(String text) async {
-    await flutterTts.setLanguage(
-        "en-US"); // You can change this to other languages as needed
+    print(await flutterTts.getLanguages);
+    await flutterTts.setLanguage(widget.conversation
+        .getLanguage()); // You can change this to other languages as needed
     await flutterTts.setPitch(1.0);
     await flutterTts.setSpeechRate(0.5);
 

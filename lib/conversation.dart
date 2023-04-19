@@ -21,6 +21,14 @@ class Conversation {
       required this.userLanguage,
       required this.defaultLanguage,
       required this.blobUrl});
+
+  String getLanguage() {
+    if (userLanguage.startsWith('en')) {
+      return 'en-US';
+    } else {
+      return 'es-ES';
+    }
+  }
 }
 
 class ConversationsList extends StatelessWidget {
