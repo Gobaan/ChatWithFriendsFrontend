@@ -55,13 +55,11 @@ const theSource = AudioSource.microphone;
 
 /// Example app.
 class SimpleRecorder extends StatefulWidget {
-  final TextEditingController textController;
   final Conversation conversation;
   final void Function(Uri) onRecord;
   final void Function(String) onText;
   const SimpleRecorder(
-      {required this.textController,
-      required this.onRecord,
+      {required this.onRecord,
       required this.onText,
       required this.conversation});
 
@@ -72,6 +70,7 @@ class SimpleRecorder extends StatefulWidget {
 class _SimpleRecorderState extends State<SimpleRecorder> {
   OpusOggRecorder recorder = OpusOggRecorder();
   bool _isRecording = false;
+  final TextEditingController _textController = TextEditingController();
 
   // Create a new MediaRecorder for the audio data
 
@@ -132,18 +131,42 @@ class _SimpleRecorderState extends State<SimpleRecorder> {
     widget.onText(message);
   }
 
-  @override
   Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 8.0),
+      child: Row(
+        children: [
+          Icon(Icons.stop,
+              color: _isRecording ? Colors.red : Colors.transparent),
+          Expanded(
+            child: TextField(
+              controller: _textController,
+              onChanged: (text) => setState(() {}),
+              decoration:
+                  const InputDecoration.collapsed(hintText: 'Send a message'),
+            ),
+          ),
+          buildRecordButton(),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget buildRecordButton() {
     return GestureDetector(
-        onLongPress: widget.textController.text.isEmpty ? startRecorder : null,
+        onLongPress: _textController.text.isEmpty ? startRecorder : null,
         onLongPressEnd: (LongPressEndDetails details) {
-          widget.textController.text.isEmpty
-              ? stopRecorder()
-              : _sendMessage(widget.textController.text);
+          if (_textController.text.isEmpty) {
+            stopRecorder();
+          } else {
+            _textController.clear();
+            _sendMessage(_textController.text);
+          }
         },
         child: _isRecording
             ? const Icon(Icons.stop, color: Colors.red)
-            : (widget.textController.text.isEmpty
+            : (_textController.text.isEmpty
                 ? const Icon(Icons.mic)
                 : const Icon(Icons.send)));
   }

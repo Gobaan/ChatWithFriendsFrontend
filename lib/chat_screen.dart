@@ -43,7 +43,6 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final TextEditingController _textController = TextEditingController();
   WebSocketChannel? _webSocketChannel;
 
   @override
@@ -158,25 +157,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildInputArea() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 8.0),
-      child: Row(
-        children: [
-          Flexible(
-            child: TextField(
-              controller: _textController,
-              onChanged: (text) => setState(() {}),
-              decoration: InputDecoration.collapsed(hintText: 'Send a message'),
-            ),
-          ),
-          SimpleRecorder(
-            textController: _textController,
-            onText: _sendMessage,
-            onRecord: onRecord,
-            conversation: widget.conversation,
-          ),
-        ],
-      ),
+    return SimpleRecorder(
+      onText: _sendMessage,
+      onRecord: onRecord,
+      conversation: widget.conversation,
     );
   }
 
@@ -203,7 +187,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _sendMessage(String text) {
-    _textController.clear();
     final message = Message(
       sender: widget
           .conversation.userId, // Replace with the current user's identifier
