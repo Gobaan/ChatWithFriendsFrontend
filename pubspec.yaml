@@ -45,6 +45,7 @@ dependencies:
   permission_handler: ^10.2.0
   audio_session: ^0.1.13
   audioplayers_web: ^3.0.0
+  flutter_tts: ^3.6.3
 
 
 dev_dependencies:

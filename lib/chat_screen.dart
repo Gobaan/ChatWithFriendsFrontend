@@ -14,6 +14,7 @@ import 'package:web_socket_channel/html.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:chat_with_friends/simple_recorder.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 Future<String> fetchWebSocketUrl(Conversation conversation) async {
   var negotiateUrl =
@@ -44,6 +45,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   WebSocketChannel? _webSocketChannel;
+  final FlutterTts flutterTts = FlutterTts();
 
   @override
   void initState() {
@@ -55,6 +57,15 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _webSocketChannel?.sink.close();
     super.dispose();
+  }
+
+  Future<void> playTextAsSpeech(String text) async {
+    await flutterTts.setLanguage(
+        "en-US"); // You can change this to other languages as needed
+    await flutterTts.setPitch(1.0);
+    await flutterTts.setSpeechRate(0.5);
+
+    await flutterTts.speak(text);
   }
 
   Future<void> _initializeWebSocket() async {
@@ -131,18 +142,32 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: isMe ? Colors.blue : Colors.grey[300],
-                  ),
-                  child: Text(
-                    message.translated.isEmpty
-                        ? message.original
-                        : message.translated,
-                    style: TextStyle(color: isMe ? Colors.white : Colors.black),
-                  ),
-                ),
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: isMe ? Colors.blue : Colors.grey[300],
+                    ),
+                    child: Row(children: [
+                      message.blob.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.play_arrow),
+                              onPressed: () {
+                                playTextAsSpeech(message.translated.isEmpty
+                                    ? message.original
+                                    : message.translated);
+                              },
+                            )
+                          : const SizedBox.shrink(),
+                      (message.translated.isEmpty && message.original.isEmpty)
+                          ? const SizedBox.shrink()
+                          : Text(
+                              message.translated.isEmpty
+                                  ? message.original
+                                  : message.translated,
+                              style: TextStyle(
+                                  color: isMe ? Colors.white : Colors.black),
+                            )
+                    ])),
                 SizedBox(height: 4),
                 Text(
                   DateFormat('hh:mm a').format(message.timestamp),
@@ -166,12 +191,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void onRecord(Uri uri) {
     final message = Message(
-      sender: widget
-          .conversation.userId, // Replace with the current user's identifier
-      original: '',
-      translated: '',
-      timestamp: DateTime.now(),
-    );
+        sender: widget
+            .conversation.userId, // Replace with the current user's identifier
+        original: '',
+        translated: '',
+        timestamp: DateTime.now(),
+        blob: uri.toString());
 
     var jsonMessage = message.toJson();
     jsonMessage['sessionId'] = widget.conversation.sessionId;
@@ -188,12 +213,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _sendMessage(String text) {
     final message = Message(
-      sender: widget
-          .conversation.userId, // Replace with the current user's identifier
-      original: text,
-      translated: '',
-      timestamp: DateTime.now(),
-    );
+        sender: widget
+            .conversation.userId, // Replace with the current user's identifier
+        original: text,
+        translated: '',
+        timestamp: DateTime.now(),
+        blob: '');
 
     var jsonMessage = message.toJson();
     jsonMessage['sessionId'] = widget.conversation.sessionId;
