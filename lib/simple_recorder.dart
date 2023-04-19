@@ -71,6 +71,7 @@ class SimpleRecorder extends StatefulWidget {
 
 class _SimpleRecorderState extends State<SimpleRecorder> {
   OpusOggRecorder recorder = OpusOggRecorder();
+  bool _isRecording = false;
 
   // Create a new MediaRecorder for the audio data
 
@@ -89,14 +90,18 @@ class _SimpleRecorderState extends State<SimpleRecorder> {
 
   // ----------------------  Here is the code for recording and playback -------
 
-  void record() {
+  void startRecorder() {
     recorder.startRecording(_uploadAudio);
-    setState(() {});
+    setState(() {
+      _isRecording = true;
+    });
   }
 
   void stopRecorder() async {
     recorder.stopRecording();
-    setState(() {});
+    setState(() {
+      _isRecording = false;
+    });
   }
 
   Future<void> _uploadAudio(String recordUrl) async {
@@ -123,25 +128,23 @@ class _SimpleRecorderState extends State<SimpleRecorder> {
 
 // ----------------------------- UI --------------------------------------------
 
-  _Fn? getRecorderFn() {
-    return recorder.isStopped ? record : stopRecorder;
-  }
-
   void _sendMessage(String message) {
     widget.onText(message);
   }
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      icon: recorder.isStopped
-          ? (widget.textController.text.isEmpty
-              ? const Icon(Icons.mic)
-              : const Icon(Icons.send))
-          : const Icon(Icons.stop, color: Colors.red),
-      onPressed: widget.textController.text.isEmpty
-          ? getRecorderFn()
-          : () => _sendMessage(widget.textController.text),
-    );
+    return GestureDetector(
+        onLongPress: widget.textController.text.isEmpty ? startRecorder : null,
+        onLongPressEnd: (LongPressEndDetails details) {
+          widget.textController.text.isEmpty
+              ? stopRecorder()
+              : _sendMessage(widget.textController.text);
+        },
+        child: _isRecording
+            ? const Icon(Icons.stop, color: Colors.red)
+            : (widget.textController.text.isEmpty
+                ? const Icon(Icons.mic)
+                : const Icon(Icons.send)));
   }
 }
