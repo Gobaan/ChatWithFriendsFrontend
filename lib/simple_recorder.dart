@@ -155,15 +155,14 @@ class _SimpleRecorderState extends State<SimpleRecorder> {
   @override
   Widget buildRecordButton() {
     return GestureDetector(
-        onLongPress: _textController.text.isEmpty ? startRecorder : null,
-        onLongPressEnd: (LongPressEndDetails details) {
-          if (_textController.text.isEmpty) {
-            stopRecorder();
-          } else {
-            _textController.clear();
-            _sendMessage(_textController.text);
-          }
+        onTap: () {
+          _sendMessage(_textController.text);
+          _textController.clear();
         },
+        onLongPress: _textController.text.isEmpty ? startRecorder : null,
+        onLongPressEnd: _textController.text.isEmpty
+            ? (LongPressEndDetails details) => stopRecorder()
+            : null,
         child: _isRecording
             ? const Icon(Icons.stop, color: Colors.red)
             : (_textController.text.isEmpty

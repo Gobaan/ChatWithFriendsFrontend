@@ -98,6 +98,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     final qrCodeUrl =
         '${html.window.location}?sessionId=${widget.conversation.sessionId}&language=${widget.conversation.defaultLanguage}';
+    print(qrCodeUrl);
     return Scaffold(
         appBar: AppBar(
           title: Text(widget.conversation.title),
@@ -119,6 +120,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
             _buildInputArea(),
+            const SizedBox(height: 20),
           ],
         ));
   }
